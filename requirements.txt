@@ -3,4 +3,3 @@ pandas_ta
 streamlit
 yfinance
 openpyxl
-time
