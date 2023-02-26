@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 import yfinance as yf
 import pandas_ta as ta
@@ -150,6 +151,7 @@ if st.button('Start the scan now!'):
 			if IND_scan:
 				ticker = ticker+".NS"
 			
+			time.sleep(1) # Sleep for 1 seconds
 			df = yf.download(ticker, period=fetch_period)
 			print ("Length of the dataframe:", len(df))
 
