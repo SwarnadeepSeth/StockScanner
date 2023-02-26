@@ -4,7 +4,7 @@ import yfinance as yf
 import pandas_ta as ta
 import streamlit as st
 import streamlit.components.v1 as stc
-#st.set_page_config(layout="wide")
+st.set_page_config(layout="wide")
 
 #================================ Parameters ================================# 
 fetch_period = '2y'
@@ -58,8 +58,8 @@ nifty = pd.read_excel("nifty1000.xlsx")
 
 st.title("Stocks That Just Crossed the 200 EMA in Daily TimeFrame")
 st.write("Enter the your ticker symbols separated by commas.")
-custom_tickers = st.text_input("**:blue[Tickers of Your Choice:]**", "AAPL")
-st.write("If you enter custom NSE stocks then add .NS after the ticker")
+st.write("(Note: If you want to enter custom NSE stocks then add .NS after the ticker)")
+custom_tickers = st.text_input("**:blue[Tickers of Your Choice:]**", "AAPL,MSFT,GOOG")
 
 # ======================================================================================= # 
 # Store the initial value of widgets in session state
@@ -68,7 +68,7 @@ if "visibility" not in st.session_state:
     st.session_state.disabled = False
     st.session_state.horizontal = False
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
     custom_scan = st.checkbox("Scan my custom stokes list only", key="disabled")
@@ -76,14 +76,19 @@ with col1:
     IND_scan = st.checkbox("Scan through NSE ticker list", key="IND")
 
 with col2:
-    selected_scan_number = st.radio(
-        "Comprehensive Scan (By Market Cap) 👇",
-        ["Top 100", "Top 1000", "All"],
-        key="Scan_Number",
-        label_visibility=st.session_state.visibility,
-        disabled=st.session_state.disabled,
-        horizontal=st.session_state.horizontal,
-    )
+	selected_scan_number = st.radio(
+		"Comprehensive Scan (By Market Cap) 👇",
+		["Top 100", "Top 500", "Top 1000", "Custom Range"],
+		key="Scan_Number",
+		label_visibility=st.session_state.visibility,
+		horizontal=st.session_state.horizontal,
+	)
+
+with col3:
+	if selected_scan_number== "Custom Range":
+		with st.form(key="custom_scan_range_form"):
+			scan_start, scan_end = st.slider("Custom Scan Range", 0, 7000, (0, 7000), 1)
+			submit_button = st.form_submit_button(label="Submit")
 
 # ======================================================================================= # 
 if US_scan:
@@ -97,16 +102,26 @@ else:
      # Split the ticker symbols and check each one
     Ticker_List = [custom_tickers.strip().upper() for custom_tickers in custom_tickers.split(",")]
 
-
+		
 if custom_scan:
+	scan_start = 0
 	scan_number = len(Ticker_List)
-else:
+elif selected_scan_number:
 	if (selected_scan_number == 'Top 100'):
+		scan_start = 0
 		scan_number = 100
+	elif (selected_scan_number == 'Top 500'):
+		scan_start = 0
+		scan_number = 500
 	elif (selected_scan_number == 'Top 1000'):
+		scan_start = 0
 		scan_number = 1000
 	else:
-		scan_number = len(Ticker_List)
+		scan_start = scan_start
+		scan_number = scan_end
+else:
+	scan_start = scan_start
+	scan_number = scan_end
 
 # ======================================================================================= # 
 if US_scan:
@@ -131,18 +146,19 @@ else:
 	else:
 		df_desired_length = 'none'
 
-print ("Selected scan number:", scan_number)
+print ("[Scan_Start: Scan_End]", scan_start, scan_number)
+
 
 # ======================================================================================= # 
 if st.button('Start the scan now!'):
-	st.write('We have started the EMA scan.')
+	st.write(f'We have started the EMA scan ranging [{scan_start} - {scan_number}]')
 
 	#st.write("Count", "\t|Ticker", "\t|Close", "\t|EMA200", "\t|Close-EMA200", "\t|%difference")
 
 	with st.empty():
 		bullish_tickers = []
 		count = 0
-		for tick in range(0, scan_number):
+		for tick in range(scan_start, scan_number):
 			ticker = Ticker_List[tick]
 			#ticker = 'SQ'
 			print ("Now Accessing the Symbol:", tick, ticker)
@@ -151,7 +167,7 @@ if st.button('Start the scan now!'):
 			if IND_scan:
 				ticker = ticker+".NS"
 			
-			time.sleep(1) # Sleep for 1 seconds
+			time.sleep(0.3) # Sleep for 0.3 seconds
 			df = yf.download(ticker, period=fetch_period)
 			print ("Length of the dataframe:", len(df))
 
@@ -169,6 +185,7 @@ if st.button('Start the scan now!'):
 
 				print (tick, ticker, last_close, last_ema, diff_ema, perctd)
 				if Bullish_Cross_200EMA(df):
+					st.write(str(count) + "- " + ticker)
 					bullish_tickers.append(ticker)
 					#st.write(tick, "\t|", ticker," \t|", last_close, "\t|", last_ema, "\t|", diff_ema, "\t|", perctd, "%")
 				
@@ -181,12 +198,12 @@ if st.button('Start the scan now!'):
 		st.markdown(f"<span style='color:blue'>{len(bullish_tickers)} stocks just crossed the 200 EMA:</span>", unsafe_allow_html=True)
 		for ticker in bullish_tickers:
 			st.write("- " + ticker)
-			if US_scan:
+			if US_scan or custom_scan:
 				stc.html(
 					header + f"""
 						new TradingView.widget(
 						{{
-						"width": 700,
+						"width": 1400,
 						"height": 500,
 						"symbol": "{ticker}",
 						"interval": "D",
@@ -203,12 +220,9 @@ if st.button('Start the scan now!'):
 
 					""" + footer,
 					height=500,
-					width=700,
+					width=1400,
 				)
-	elif custom_scan:
-		st.write("<span style='color:blue'>No given stocks crossed the 200 EMA.</span>", unsafe_allow_html=True)
 	else:
 		st.write("<span style='color:blue'>No stocks crossed the 200 EMA.</span>", unsafe_allow_html=True)
-
 
 
