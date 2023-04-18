@@ -126,16 +126,16 @@ else:
 # ======================================================================================= # 
 if US_scan:
 	if (fetch_period == '2y'):
-		df_desired_length = 504 
+		df_desired_length = len(yf.download('AAPL', period='2y'))
 	elif (fetch_period == '1y'):
-		df_desired_length = 251
+		df_desired_length = len(yf.download('AAPL', period='1y'))
 	else:
 		df_desired_length = 'none'
 elif IND_scan:
 	if (fetch_period == '2y'):
-		df_desired_length = 498 
+		df_desired_length = len(yf.download('ITC.NS', period='2y'))
 	elif (fetch_period == '1y'):
-		df_desired_length = 251
+		df_desired_length = len(yf.download('ITC.NS', period='1y'))
 	else:
 		df_desired_length = 'none'
 else:
