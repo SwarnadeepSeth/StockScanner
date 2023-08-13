@@ -1,5 +1,5 @@
 pandas
 pandas_ta
-streamlit
+streamlit==1.19.0
 yfinance
 openpyxl
